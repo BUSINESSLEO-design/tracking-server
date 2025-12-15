@@ -10,46 +10,57 @@ app.use(cors({ origin: "*" }));
 app.post("/api/track", async (req, res) => {
   const { tracking } = req.body;
 
-  console.log("📦 Tracking ricevuto:", tracking);
-
   if (!tracking) {
     return res.status(400).json({ error: "Tracking mancante" });
   }
 
   try {
-    // 1️⃣ Register (se già registrato non è un errore)
+    console.log("📦 Tracking ricevuto:", tracking);
+
+    // 1️⃣ Registra tracking (se già registrato non è un errore)
     const registerRes = await axios.post(
       "https://api.17track.net/track/v2.2/register",
       [{ number: tracking }],
-      { headers: { "17token": process.env.TRACK17_TOKEN } }
+      {
+        headers: {
+          "17token": process.env.TRACK17_TOKEN
+        }
+      }
     );
 
     console.log("✅ Register response:", JSON.stringify(registerRes.data));
 
-    // 2️⃣ Get tracking info
-    const trackRes = await axios.post(
+    // 2️⃣ Recupera info tracking
+    const infoRes = await axios.post(
       "https://api.17track.net/track/v2.2/gettrackinfo",
       [{ number: tracking }],
-      { headers: { "17token": process.env.TRACK17_TOKEN } }
+      {
+        headers: {
+          "17token": process.env.TRACK17_TOKEN
+        }
+      }
     );
 
-    console.log("📡 GetTrackInfo raw:", JSON.stringify(trackRes.data));
+    console.log("📡 GetTrackInfo raw:", JSON.stringify(infoRes.data));
 
-    const accepted = trackRes.data?.data?.accepted;
-
-    if (!accepted || !accepted.length) {
+    const accepted = infoRes.data?.data?.accepted;
+    if (!accepted || accepted.length === 0) {
       return res.json({ error: "Tracking non trovato" });
     }
 
-    const info = accepted[0].track_info;
-    const latest = info.latest_event;
+    const trackInfo = accepted[0].track_info;
+    if (!trackInfo) {
+      return res.json({ error: "Tracking non disponibile" });
+    }
+
+    const latestStatus = trackInfo.latest_status;
+    const latestEvent = trackInfo.latest_event;
 
     res.json({
-      carrier: accepted[0].tracking.providers[0].provider.name,
-      status: info.latest_status.status,
-      description: latest.description,
-      location: latest.location || "—",
-      time: latest.time_raw.date + " " + latest.time_raw.time
+      status: latestStatus?.status || "Sconosciuto",
+      description: latestEvent?.description || null,
+      time: latestEvent?.time_utc || null,
+      location: latestEvent?.location || null
     });
 
   } catch (err) {
@@ -59,7 +70,8 @@ app.post("/api/track", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("🚀 Server avviato"));
+app.listen(PORT, () => console.log("🚀 Server avviato sulla porta", PORT));
+
 
 
 
