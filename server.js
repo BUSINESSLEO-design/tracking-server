@@ -15,6 +15,7 @@ app.post("/api/track", async (req, res) => {
   }
 
   try {
+    console.log("RISPOSTA 17TRACK:", JSON.stringify(response.data, null, 2));
     // 1️⃣ Registra tracking su 17TRACK
     await axios.post(
       "https://api.17track.net/track/v2.2/register",
@@ -58,6 +59,7 @@ app.post("/api/track", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Server avviato"));
+
 
 
 
