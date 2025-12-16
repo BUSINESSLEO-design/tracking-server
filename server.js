@@ -72,6 +72,11 @@ app.post("/api/track", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("🚀 Server avviato sulla porta", PORT));
 
+app.get("/warmup", (req, res) => {
+  res.status(204).end(); // risposta vuota, istantanea
+});
+
+
 
 
 
